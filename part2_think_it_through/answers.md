@@ -3,11 +3,11 @@
 All numbers are from my own runs (50 seeds per case). Tables: [numbers.md](numbers.md), rerun with `python -m part2_think_it_through.experiments`.
 
 **1. How sure before launching? What does one more second buy and cost?**
-"Sure" is two questions. *Is it a threat?* It must come inside 500 m even if its closest approach
-is 2σ worse than estimated (~98% sure, if the tracker's σ is honest). It must also move at drone
+The way the code answers on how "sure" it is before launching is through two ways . *Is it a threat?* It must come inside 500 m even if its closest approach
+is 2σ worse than estimated and it must also move at drone
 speed and fly straight, all for 3 s. A passes this at t ≈ 10 s, 2.75 km out. In 100 runs, B never
 got closer than 718 m to the 500 m line, and the bird never went faster than 14.4 m/s, against
-18 m/s. *Will the shot hit?* This is what sets the launch time, because aim error grows with flight time:
+18 m/s. The second question is *Will the shot hit?* This is what sets the launch time, because aim error grows with flight time:
 
 | launch | flight | met at | miss mean / worst | hits (15 m reach) |
 |---|---|---|---|---|
@@ -20,22 +20,11 @@ At my launch point one more second **buys nothing** (miss 4.9 → 5.1 m). It **c
 of the 10.6 s left before the meeting falls inside 500 m. Waiting only pays while the flight is long.
 
 **2. The radar goes silent for 3 s.**
-The tracker coasts on constant velocity, and the track survives (it is dropped only after 5 s).
-After the launch nothing changes: the interceptor flies straight and needs no radar. If the launch
-falls due during the silence, it goes on the coasted track (last report 1.1 s old, aim error 9.3
-instead of 8.8 m, 50/50 hits). **A flaw this exposed:** after the gap, the fit score has too few
-reports and becomes "unknown", so the 3 s threat clock restarts. If the silence ends just before
-the launch, the launch slips up to 5.9 s and the meeting moves from 681 m to 585 m. It is still
-50/50 outside 500 m, but half the margin is gone. Fix: a gap is not evidence, so keep the verdict
-while coasting.
+The tracker coasts on constant velocity, and the track survives. 
+After the launch nothing changes: the interceptor flies straight and needs no radar. If the launch falls due during the silence, it goes on the coasted track (last report 1.1 s old, aim error 9.3 instead of 8.8 m, 50/50 hits). **A flaw this exposed:** after the gap, the fit score has too few reports and becomes "unknown", so the 3 s threat clock restarts. If the silence ends just before the launch, the launch slips up to 5.9 s and the meeting moves from 681 m to 585 m. It is still 50/50 outside 500 m, but half the margin is gone. Fix: a gap is not evidence, so keep the verdict while coasting.
 
 **3. Two threats, one interceptor.**
-My code would order two launches, because it judges each track alone. Time should decide. Launch at
-the threat with the earliest deadline to be met outside 500 m (already computed every tick as
-`deadline_in_s`), never at one that is already too late. On a tie, take the one more likely to be
-hit. If another interceptor will be ready soon, launch the first one earlier: a 19 s flight still
-hit 50/50, and that gives the second interceptor ~25 s to get ready instead of ~10. Show the operator
-which threat gets through, and when.
+There are two scenarios that this uses. Utilizing the decision algorithm if it can predict that two of the threats will at one point come within 15m of one another it will launch an interceptor at that point in time in the hopes to disable the threat. If it determines that it cannot it will launch the interceptor at the drone that will come first in the hopes that another interceptor will be ready to disable the other threat. 
 
 **4. Where does the human belong?**
 On the launch decision. There is time for it: confirmation at t ≈ 10 s, launch at t ≈ 78 s. The

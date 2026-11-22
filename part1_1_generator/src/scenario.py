@@ -13,7 +13,7 @@ The SYSTEM side (tracker, decision) must never use anything from this module.
 import numpy as np
 
 from common import config as cfg
-from common.files import TRUTH_DTYPE
+from common.files import TRUTH_DTYPE, positions, rows_for
 
 
 def time_grid():
@@ -112,6 +112,28 @@ def make_bird(t, rng):
         pos = pos + vel * dt
 
     return _to_table("C", t, all_pos, all_vel)
+
+
+# ---------------------------------------------------------------------------
+# D — an optional second threat (Part 2 Q3 cases only; the PDF scenario has one)
+# ---------------------------------------------------------------------------
+def make_second_threat(truth, turn_deg=0.0, side_m=0.0, delay_s=0.0, tid="D"):
+    """A second threat built from A's true path, so it is exactly as dangerous as A:
+      turn_deg  the same flight, coming from turn_deg further round the site
+      side_m    shifted this far to A's right: flying alongside it, in formation
+      delay_s   starting this much later on the same line (a multiple of the 0.1 s tick)
+    """
+    a = rows_for(truth, "A")
+    turn = np.radians(turn_deg)
+    rot = np.array([[np.cos(turn), -np.sin(turn), 0.0], [np.sin(turn), np.cos(turn), 0.0], [0.0, 0.0, 1.0]])
+    pos = positions(a) @ rot.T
+    vel = np.column_stack([a["vx_mps"], a["vy_mps"], a["vz_mps"]]) @ rot.T
+    if side_m:
+        right = np.array([vel[0, 1], -vel[0, 0], 0.0])          # A flies straight: one direction for all rows
+        pos = pos + side_m * right / np.linalg.norm(right)
+    t = np.round((a["time_s"] + delay_s) / cfg.RADAR_DT_S) * cfg.RADAR_DT_S
+    keep = t <= cfg.SIM_DURATION_S + 1e-9
+    return _to_table(tid, t[keep], pos[keep], vel[keep])
 
 
 # ---------------------------------------------------------------------------

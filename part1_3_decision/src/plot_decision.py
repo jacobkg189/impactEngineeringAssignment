@@ -35,11 +35,12 @@ STATUS_STYLE = {
     "erratic":   ("#6f6d68", "heading in, but not flying straight"),
     "threat":    ("#fab219", "threat — watching it hold"),
     "confirmed": ("#ec835a", "confirmed — holding for the launch moment"),
+    "queued":    ("#b2452a", "due, but waiting for an interceptor"),
     "launch":    ("#d03b3b", "launch order"),
     "too_late":  ("#d03b3b", "too late to catch"),
     "launched":  ("#52514e", "interceptor on its way"),
 }
-LABEL_ON_DARK = {"slow", "erratic", "launched", "launch", "too_late"}
+LABEL_ON_DARK = {"slow", "erratic", "launched", "launch", "too_late", "queued"}
 
 
 def _threshold(ax, y, text):

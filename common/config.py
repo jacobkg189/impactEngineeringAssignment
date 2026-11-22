@@ -31,6 +31,9 @@ INTERCEPTOR_DELAY_S = 3.0           # [PDF] time from launch order to leaving th
 INTERCEPTOR_SPEED_MPS = 60.0        # [PDF] straight line, constant speed
 KILL_RADIUS_M = 15.0                # [ASSUMPTION] interceptor "hits" if it passes within this distance of the target.
                                     #   The PDF says "straight line" = no terminal seeker, so our aim must be good.
+INTERCEPTORS_IN_CONTAINER = 4       # [ASSUMPTION] how many interceptors the container holds
+INTERCEPTOR_REARM_S = 15.0          # [ASSUMPTION] one interceptor is ready at t = 0. After each launch the next one
+                                    #   is ready this many seconds later (Part 2 Q3: "one interceptor is ready").
 
 # ---------------------------------------------------------------------------
 # Simulation
@@ -109,3 +112,13 @@ INTERCEPT_MARGIN_M = 100.0          # [TUNING] plan the intercept at least this 
 LAUNCH_LEAD_S = 5.0                 # [TUNING] launch when the latest safe launch moment is this close, not
                                     #   earlier. Waiting shortens the flight (aim error = velocity error x
                                     #   flight time) and gives the target less time to change its mind.
+
+# More than one threat (decision.py, Decider._assign) -------------------------
+SHARED_SHOT_MARGIN_M = 9.0          # [TUNING] two threats share ONE interceptor, aimed at their midpoint, only if
+                                    #   at the meeting each is at least this far inside the kill radius:
+                                    #   separation / 2 <= KILL_RADIUS_M - 9 m, i.e. at most 12 m apart.
+                                    #   9 m = the 95th-percentile true miss over 100 runs (Part 1.5), so both
+                                    #   are likely inside the reach even with a typical aim error.
+MAKE_TIME_FOR_NEXT = True           # [TUNING] with several threats queued, launch the most urgent one early
+                                    #   enough that the next interceptor is ready in time for the next threat.
+                                    #   With one threat this changes nothing.

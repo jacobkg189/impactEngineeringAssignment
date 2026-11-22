@@ -48,7 +48,8 @@ ESTIMATE_DTYPE = np.dtype(TRUTH_DTYPE.descr + [
 DECISION_DTYPE = np.dtype([
     ("track_id", "U8"),
     ("time_s", "f8"),
-    ("status", "U12"),              # young / clear / slow / erratic / threat / confirmed / launch / launched / too_late
+    ("status", "U12"),              # young / clear / slow / erratic / threat / confirmed / queued / launch / launched / too_late
+                                    #   (queued = due for launch but no interceptor is ready yet)
     ("age_s", "f8"),                # how long we have been tracking this object
     ("speed_mps", "f8"),            # estimated speed
     ("closest_approach_m", "f8"),   # if it flies on straight, how close to the site it will get
@@ -61,9 +62,13 @@ DECISION_DTYPE = np.dtype([
     ("threat_held_s", "f8"),        # how long the threat test has held without a break
 ])
 
-# One row per launch order.
+# One row per threat a launch order is aimed at. Usually one interceptor = one row. A shared shot
+# (one interceptor aimed between two threats flying close together) gives two rows with the same
+# interceptor number, each naming the other in shared_with.
 LAUNCH_DTYPE = np.dtype([
     ("track_id", "U8"),
+    ("interceptor", "i8"),          # 1, 2, ... in launch order
+    ("shared_with", "U8"),          # the other threat this interceptor is aimed at, "" if none
     ("time_s", "f8"),               # when the order was given
     ("leave_time_s", "f8"),         # order + 3 s
     ("intercept_time_s", "f8"),     # when we expect to meet the target

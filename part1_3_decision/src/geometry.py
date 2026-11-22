@@ -7,6 +7,7 @@ velocity — exactly what the tracker estimates. The site is at the origin.
   closest_approach(pos, vel)          how close the object will get to the site, and when
   prediction_sigma(...)               how wrong a position predicted T seconds ahead will be
   solve_intercept(pos, vel, ...)      where/when an interceptor ordered NOW meets the target
+  solve_shared_intercept(...)         one interceptor aimed between two targets (their midpoint)
   time_until_latest_launch(...)       how long we can still wait before the intercept
                                       would happen inside a given range
 
@@ -87,6 +88,22 @@ def intercept_range(pos, vel, delay_s, speed_mps):
     if solution is None:
         return float("nan")
     return float(np.linalg.norm(solution[1]))
+
+
+def solve_shared_intercept(pos1, vel1, pos2, vel2, delay_s, speed_mps):
+    """One interceptor for two straight-flying targets, aimed at their midpoint.
+
+    The midpoint of two constant-velocity points is itself a constant-velocity point, so this is
+    solve_intercept() on the midpoint. Returns (time_to_intercept_s, aim_point, separation_m),
+    where separation is how far apart the two targets are at that moment, or None if the
+    midpoint cannot be caught.
+    """
+    pos1, vel1, pos2, vel2 = (np.asarray(v, dtype=float) for v in (pos1, vel1, pos2, vel2))
+    solution = solve_intercept((pos1 + pos2) / 2, (vel1 + vel2) / 2, delay_s, speed_mps)
+    if solution is None:
+        return None
+    t, aim = solution
+    return t, aim, float(np.linalg.norm((pos1 - pos2) + (vel1 - vel2) * t))
 
 
 def time_until_latest_launch(pos, vel, delay_s, speed_mps, required_range_m):
