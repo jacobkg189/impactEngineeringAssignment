@@ -1,5 +1,5 @@
 """
-experiments.py — the runs behind the numbers in answers.md. Every number quoted there is
+experiments.py — the runs behind the numbers in README.md. Every number quoted there is
 reproduced here.
 
     .venv/bin/python -m part2_think_it_through.experiments      (~2 min on 8 cores)
@@ -153,7 +153,7 @@ def main():
     n = len(SEEDS)
     f = lambda x: f"{x:.0f}" if np.isfinite(x) else "—"
     g = lambda x: f"{round(x, 1) + 0.0:.1f}" if np.isfinite(x) else "—"   # + 0.0 turns -0.0 into 0.0
-    lines = ["# Numbers behind answers.md", "",
+    lines = ["# Numbers behind README.md", "",
              f"_Written by `python -m part2_think_it_through.experiments`: seeds 0–{n - 1}, {n} runs per row. "
              "Do not edit by hand._", ""]
 

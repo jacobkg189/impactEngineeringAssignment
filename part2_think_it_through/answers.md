@@ -24,12 +24,12 @@ The tracker coasts on constant velocity, and the track survives.
 After the launch nothing changes: the interceptor flies straight and needs no radar. If the launch falls due during the silence, it goes on the coasted track (last report 1.1 s old, aim error 9.3 instead of 8.8 m, 50/50 hits). **A flaw this exposed:** after the gap, the fit score has too few reports and becomes "unknown", so the 3 s threat clock restarts. If the silence ends just before the launch, the launch slips up to 5.9 s and the meeting moves from 681 m to 585 m. It is still 50/50 outside 500 m, but half the margin is gone. Fix: a gap is not evidence, so keep the verdict while coasting.
 
 **3. Two threats, one interceptor.**
-The code queues the threats by urgency: the one with the least time left before it would get inside the zone goes first. It launches at that one earlier than usual, by just enough that the next interceptor (ready 15 s after a launch, my assumption) is in time for the second threat. In 50 runs with two threats arriving at the same moment from different sides, both were met outside 500 m in **50/50** (first 950 m out, second 684 m). Taking the closest one first without launching early is not enough: **0/50**, because the second threat waits for the interceptor and is met 424 m out. If the next interceptor takes 30 s, the first launch moves 30 s earlier, its flight gets longer, and one run in 50 misses.
+The code queues the threats by urgency: the one with the least time left before it would get inside the zone goes first. It launches at that one earlier than usual, by just enough that the next interceptor (ready 15 s after a launch, my assumption) is in time for the second threat. In 50 runs with two threats arriving at the same moment from different sides, both were met outside 500 m in **50/50** (first 950 m out, second 684 m). Taking the closest one first without launching early is not enough: **0/50**, because the second threat waits for the interceptor and is met 424 m out. If the next interceptor takes 30 s, the first launch moves 30 s earlier, its flight gets longer, and one run in 50 misses. An improvement to this system would be to run the algorithm to determine if there is a point in time at launch where the interceptor is able to neutralize both threats at the same time. This allows only one interceptor to be used in case only one is avaliable or ready. 
 
 **4. Where does the human belong?**
 On the launch decision. There is time for it: confirmation at t ≈ 10 s, launch at t ≈ 78 s. The
 software asks at confirmation. A *yes* arms the launch, and the software still picks the moment.
-No *yes* means no launch, with an alarm that escalates toward the deadline. To decide within 5 s,
+No *yes* means no launch
 the operator needs:
 **a map** (site, 500 m ring, this track's reports, predicted path and intercept point, other tracks
 greyed with one word: "clear", "slow"); **why**, in one line ("passes 7 ± 23 m from the site ·
@@ -46,5 +46,3 @@ ready: 1). All of it is already in the launch record.
    Crossing at 25 m/s, it is 15 m sideways: the whole reach.
 4. **How reports go missing.** Random 30% drops are fine (50/50); bursts are not (Q2).
 5. **Whether track IDs hold** through crossings and gaps. The software trusts them completely.
-
-The method: fly a GPS-logged drone on known lines, and record birds at the site for days.

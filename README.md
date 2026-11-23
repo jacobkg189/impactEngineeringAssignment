@@ -18,7 +18,7 @@ Every part folder has the same shape: `README.md` (what the PDF asks + how to ru
 | `part1_3_decision/` | 1.3 Decision | ✅ done |
 | `part1_4_show_it/` | 1.4 Show it | ✅ done: open `part1_4_show_it/output/replay_seed0.html` |
 | `part1_5_checks/` | 1.5 Checks (50 seeds) | ✅ done (results below) |
-| `part2_think_it_through/` | Part 2 write-up | ✅ drafted: `answers.md`, numbers from `experiments.py` → `numbers.md` |
+| `part2_think_it_through/` | Part 2 write-up | ✅ drafted: `README.md`, numbers from `experiments.py` → `numbers.md` |
 | `how_you_work/` | Where Claude was used | ongoing |
 | `common/` | shared: `config.py` (every number), `files.py` (CSV formats), `paths.py`, `style.py` | |
 

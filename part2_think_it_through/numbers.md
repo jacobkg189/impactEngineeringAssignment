@@ -1,4 +1,4 @@
-# Numbers behind answers.md
+# Numbers behind README.md
 
 _Written by `python -m part2_think_it_through.experiments`: seeds 0–49, 50 runs per row. Do not edit by hand._
 
