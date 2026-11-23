@@ -7,21 +7,6 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 .venv/bin/pytest                 # all checks
 ```
 
-## Layout — folders follow the assignment PDF
-Every part folder has the same shape: `README.md` (what the PDF asks + how to run),
-`src/` (code), `tests/` (checks), `output/` (what it created).
-
-| Folder | PDF section | Status |
-|---|---|---|
-| `part1_1_generator/` | 1.1 Generator | ✅ done |
-| `part1_2_tracker/` | 1.2 Tracker | ✅ done |
-| `part1_3_decision/` | 1.3 Decision | ✅ done |
-| `part1_4_show_it/` | 1.4 Show it | ✅ done: open `part1_4_show_it/output/replay_seed0.html` |
-| `part1_5_checks/` | 1.5 Checks (50 seeds) | ✅ done (results below) |
-| `part2_think_it_through/` | Part 2 write-up | ✅ drafted: `README.md`, numbers from `experiments.py` → `numbers.md` |
-| `how_you_work/` | Where Claude was used | ongoing |
-| `common/` | shared: `config.py` (every number), `files.py` (CSV formats), `paths.py`, `style.py` | |
-
 ## The one rule that shapes the code
 The decision code never sees the truth. Only the radar reports flow forward:
 ```
@@ -52,8 +37,3 @@ seeds that no tuning step ever saw. Details and the picture are in `part1_5_chec
   it: its worst is 14.4 m/s against an 18 m/s threshold.
 - Seed 0, replayed in 3D: `part1_4_show_it/output/replay_seed0.html`.
 
-## Time spent
-_TODO_
-
-## What I'd do next
-_TODO_
