@@ -39,7 +39,7 @@ def run(seed):
         print(f"                  why: closest approach {L['closest_approach_m']:.0f} ± {L['closest_sigma_m']:.0f} m, "
               f"speed {L['speed_mps']:.1f} m/s, fit {L['fit_nis']:.1f}, held {L['threat_held_s']:.1f} s, "
               f"deadline in {L['deadline_in_s']:.1f} s, expected aim error {L['aim_sigma_m']:.1f} m "
-              f"(allowed {cfg.KILL_RADIUS_M:.0f} m)")
+              f"(allowed {cfg.TOUCH_RADIUS_M:.0f} m)")
     for tid in sorted(set(decisions["track_id"])):
         d = rows_for(decisions, tid)
         statuses, counts = np.unique(d["status"], return_counts=True)

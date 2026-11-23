@@ -26,6 +26,18 @@ _Written by `python -m part2_think_it_through.experiments`: seeds 0–49, 50 run
 | t 77–80 s (launch due inside it) | 0.0 / 0.4 | 0/50 | 50/50 | 50/50 | 681 |
 | t 84–87 s (interceptor in flight) | 0.0 / 0.0 | 0/50 | 50/50 | 50/50 | 681 |
 
+## Q3 — two threats arrive together, one interceptor is ready
+
+A second threat (A's own flight, from 90° further round the site) arrives at the same moment. Each threat needs its own interceptor.
+
+| setting | 1st ordered at t (s) | 1st met at (m) | 2nd ordered at t (s) | 2nd met at, mean (min) (m) | both met outside 500 m | worst closest pass (m) |
+|---|---|---|---|---|---|---|
+| **as built: next ready after 15 s, makes time for it** | 63.2 | 950 | 78.3 | 684 (677) | 50/50 | 13.5 |
+| next ready after 15 s, no making time (closest first only) | 78.0 | 689 | 93.0 | 424 (419) | 0/50 | 12.1 |
+| next ready after 30 s, makes time for it | 48.4 | 1212 | 78.4 | 682 (672) | 49/50 | 17.2 |
+| next ready after 30 s, no making time | 78.0 | 689 | 108.0 | 159 (155) | 0/50 | 12.1 |
+| only one interceptor in the container | 78.0 | 689 | — | — (—) | 0/50 | 12.1 |
+
 ## Q5 — the real radar is not what the software assumes
 
 | what is different | met outside 500 m | runs with a launch at B or C | closest pass mean / max (m) | bird's top speed heading in (m/s) |

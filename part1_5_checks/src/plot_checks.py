@@ -56,7 +56,7 @@ def plot_checks(blocks, path, title=""):
     # --- A: how close it passed ------------------------------------------------
     launched = r["a_launches"] > 0
     ax_pass.scatter(x[launched], r["a_pass_m"][launched], color=COLORS["A"], **dot)
-    _line(ax_pass, cfg.KILL_RADIUS_M, f"{cfg.KILL_RADIUS_M:g} m reach: contact if below")
+    _line(ax_pass, cfg.TOUCH_RADIUS_M, f"{cfg.TOUCH_RADIUS_M:g} m reach: contact if below")
     sigma = np.nanmean(r["a_aim_sigma_m"][launched]) if launched.any() else np.nan
     ax_pass.axhline(sigma, color=INK_MUTED, lw=1, ls=":")
     ax_pass.text(x[-1] + 2, sigma, f"aim error the\nsystem claimed (1σ)", va="center", ha="left", fontsize=8.5,

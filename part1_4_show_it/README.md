@@ -24,13 +24,16 @@
   The interceptor carries a see-through sphere of its **15 m reach**. "Touching" means the object
   is inside that sphere.
 - **Time panel.** Distance to the site over time, with the same moments marked and a time cursor.
-- **Status box** (top left). Each object's verdict from the decision step at that moment
+- **Status box** (top right). Each object's verdict from the decision step at that moment
   (e.g. "clear, passes outside 500 m", "heading in, but too slow for a drone"), plus what the
-  interceptor is doing. **What happened** (top right) lists the timeline.
+  interceptor is doing, then a small table of the **current x, y, z** (true position, in metres)
+  of every object and the interceptor. **What happened** (below it) lists the timeline.
 - **Views.** *Whole scene*, *Close-up* (A meets the interceptor, true scale), *Top-down* (a map).
 - **Play from start** runs about 8× real time and slows to one frame per radar tick for the
-  last 4 s before the meeting. The page opens on the moment of contact. Click a legend entry to
-  hide that layer, for example the reports.
+  last 4 s before the meeting. The page opens on the moment of contact.
+- **Legend.** One entry per layer (true path, radar reports, tracker estimate, launch plan,
+  interceptor), not per object, since the colours already say which object. Click an entry to
+  hide that layer for every object, for example the reports.
 
 ## Design choices
 - **Only plain shapes.** Spheres, lines and dots, with no models of aircraft or munitions.
@@ -53,7 +56,7 @@
 `replay.py` flies each launch order the way the PDF describes the interceptor. It stays in the
 container until order + 3 s, then flies a straight line from the site **through** the aim point
 at 60 m/s, and it doesn't stop at the aim point. It flies this against the **true** path and
-finds the true closest pass in 0.01 s steps. Contact = closest pass ≤ `KILL_RADIUS_M` (15 m, an
+finds the true closest pass in 0.01 s steps. Contact = closest pass ≤ `TOUCH_RADIUS_M` (15 m, an
 assumption in `common/config.py`).
 
 The generator doesn't know about the interceptor, so in `truth.csv` / `reports.csv` A keeps

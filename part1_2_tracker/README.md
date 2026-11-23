@@ -25,7 +25,7 @@ q = 0), with three extras we need:
 
 Considered and not chosen: moving average (lags, no uncertainty), alpha-beta (no uncertainty),
 IMM / multiple models (the professional answer for drone-vs-bird, too much for the time box —
-listed under next steps), particle filter (overkill), ML (no data).
+listed under next steps), particle filter (more than this needs), ML (no data).
 
 ## Choosing q (`output/tuning.txt`, 20 seeds)
 | q | A velocity RMS | A 15 s aim RMS | bird: filter overconfident by | bird fit score |

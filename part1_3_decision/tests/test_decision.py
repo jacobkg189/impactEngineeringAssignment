@@ -12,6 +12,10 @@ Checks on the decision step. Run:  .venv/bin/pytest part1_3_decision -v
                    and the live tracker+decider loop equals the file route
   firewall       - decision code never imports anything that knows the truth
   plot           - the decision picture draws from decisions + launches alone
+  two threats    - a second threat arriving with A: the most urgent one goes first, the first
+                   launch moves earlier so the next interceptor is ready in time, and both are
+                   met outside 500 m. Without that rule the second is met inside 500 m. With no
+                   interceptor left, the second is "queued", never launched.
 """
 
 import ast
@@ -102,7 +106,7 @@ def test_one_launch_at_the_threat_and_it_meets_it_outside_500m():
         aim = np.array([L["aim_x_m"], L["aim_y_m"], L["aim_z_m"]])
         actual = true_position_at(truth, "A", L["intercept_time_s"])
         miss = np.linalg.norm(aim - actual)
-        assert miss < cfg.KILL_RADIUS_M, f"seed {seed}: miss {miss:.1f} m"
+        assert miss < cfg.TOUCH_RADIUS_M, f"seed {seed}: miss {miss:.1f} m"
         assert np.linalg.norm(actual) > cfg.PROTECTED_RADIUS_M
 
 
@@ -149,7 +153,7 @@ def test_slower_interceptor_means_an_earlier_launch(monkeypatch):
     assert slow[0]["intercept_range_m"] > cfg.PROTECTED_RADIUS_M
     actual = true_position_at(truth, "A", slow[0]["intercept_time_s"])
     aim = np.array([slow[0]["aim_x_m"], slow[0]["aim_y_m"], slow[0]["aim_z_m"]])
-    assert np.linalg.norm(aim - actual) < cfg.KILL_RADIUS_M
+    assert np.linalg.norm(aim - actual) < cfg.TOUCH_RADIUS_M
 
 
 # ---------------------------------------------------------------- real time ---
@@ -205,3 +209,78 @@ def test_plot_draws_without_truth(tmp_path):
     png = tmp_path / "d.png"
     plot_decision(decisions, launches, png)
     assert png.stat().st_size > 50_000
+
+
+# ------------------------------------------------------- more than one threat ---
+TOGETHER = dict(turn_deg=90, delay_s=2.0)      # D: A's flight from another side, 2 s behind it
+
+
+def two_threats(seed, **second):
+    truth, reports = generate(seed, second_threat=second)
+    _, decisions, launches = decide_live(reports)
+    return truth, decisions, launches
+
+
+def judged(truth, L):
+    """JUDGE: (how far the target really is from the aim point at the planned time,
+    how far that is from the site)."""
+    aim = np.array([L["aim_x_m"], L["aim_y_m"], L["aim_z_m"]])
+    actual = true_position_at(truth, L["track_id"], L["intercept_time_s"])
+    return np.linalg.norm(aim - actual), np.linalg.norm(actual)
+
+
+def test_adding_a_second_threat_does_not_change_A_B_or_C():
+    truth, reports = generate(3)
+    truth2, reports2 = generate(3, second_threat=TOGETHER)
+    assert np.array_equal(truth, truth2[truth2["track_id"] != "D"])
+    assert np.array_equal(reports, reports2[reports2["track_id"] != "D"])
+    assert "D" in set(reports2["track_id"])
+
+
+def test_two_threats_most_urgent_first_and_both_met_outside_500m():
+    for seed in (1, 2, 3):
+        truth, _, launches = two_threats(seed, **TOGETHER)
+        assert list(launches["track_id"]) == ["A", "D"], f"seed {seed}"       # A is 2 s ahead: more urgent
+        assert list(launches["interceptor"]) == [1, 2]
+        assert launches["time_s"][1] >= launches["time_s"][0] + cfg.INTERCEPTOR_REARM_S - 1e-6
+        for L in launches:
+            miss, out = judged(truth, L)
+            assert miss < cfg.TOUCH_RADIUS_M, f"seed {seed}: {L['track_id']} miss {miss:.1f} m"
+            assert out > cfg.PROTECTED_RADIUS_M
+
+
+def test_first_launch_moves_earlier_only_as_much_as_the_next_interceptor_needs():
+    _, _, both = two_threats(1, **TOGETHER)
+    _, _, _, alone = decided(1)
+    earlier_by = alone[0]["time_s"] - both[0]["time_s"]
+    assert 0.0 < earlier_by <= cfg.INTERCEPTOR_REARM_S + 0.5
+    assert 0.0 < both[1]["deadline_in_s"] <= cfg.LAUNCH_LEAD_S       # the second goes at its normal moment
+
+
+def test_without_making_time_the_second_threat_waits_and_is_met_inside_500m(monkeypatch):
+    monkeypatch.setattr(cfg, "MAKE_TIME_FOR_NEXT", False)
+    truth, decisions, launches = two_threats(1, **TOGETHER)
+    assert list(launches["track_id"]) == ["A", "D"]
+    assert np.sum(rows_for(decisions, "D")["status"] == "queued") > 0     # due, no interceptor ready
+    _, out = judged(truth, launches[1])
+    assert out < cfg.PROTECTED_RADIUS_M
+
+
+def test_no_interceptor_left_means_queued_not_launched(monkeypatch):
+    monkeypatch.setattr(cfg, "INTERCEPTORS_IN_CONTAINER", 1)
+    _, decisions, launches = two_threats(1, **TOGETHER)
+    assert list(launches["track_id"]) == ["A"]
+    statuses = set(rows_for(decisions, "D")["status"])
+    assert "queued" in statuses and "launch" not in statuses
+
+
+def test_most_urgent_is_not_always_the_closest():
+    """A hand-built queue: the far one is faster, so its deadline comes first."""
+    from part1_3_decision.src.decision import Decider
+    def confirmed(tid, deadline, range_m):
+        return dict(tid=tid, flight=10.0, aim=np.array([range_m, 0.0, 0.0]), aim_sigma=5.0, range=range_m,
+                    deadline=deadline, why=(0.0, 1.0, 30.0, 3.0, 5.0, deadline, 100, 0.0))
+    decider = Decider()
+    changed = decider._assign(50.0, [confirmed("near_slow", 12.0, 900.0), confirmed("far_fast", 4.0, 1400.0)])
+    assert changed == {"far_fast": "launch"}
+    assert decider.launch_table()["track_id"][0] == "far_fast"

@@ -121,7 +121,7 @@ def plot_snapshot(truth, reports, estimates, decisions, launches, engagements, p
         axz.scatter(*e.object_at_pass, s=110, color=c, edgecolor="white", depthshade=False, zorder=6)
         axz.scatter(*e.interceptor_at_pass, s=60, color=INTERCEPTOR, edgecolor="white", depthshade=False, zorder=6)
         u, v = np.mgrid[0:2 * np.pi:28j, 0:np.pi:15j]
-        r = cfg.KILL_RADIUS_M
+        r = cfg.TOUCH_RADIUS_M
         axz.plot_wireframe(e.interceptor_at_pass[0] + r * np.cos(u) * np.sin(v),
                            e.interceptor_at_pass[1] + r * np.sin(u) * np.sin(v),
                            e.interceptor_at_pass[2] + r * np.cos(v), color=INK_MUTED, lw=0.4, alpha=0.6)
@@ -137,7 +137,7 @@ def plot_snapshot(truth, reports, estimates, decisions, launches, engagements, p
         verdict = "inside" if e.contact else "outside"
         axz.set_title(f"Close-up of the meeting, t = {e.pass_time_s:.1f} s ({tid} and the interceptor only)\n"
                       f"{tid} passes {e.pass_distance_m:.1f} m from the interceptor: {verdict} its "
-                      f"{cfg.KILL_RADIUS_M:g} m reach (grey sphere)",
+                      f"{cfg.TOUCH_RADIUS_M:g} m reach (grey sphere)",
                       loc="left", fontsize=11, color=INK, y=0.93)
         axz.legend(loc="upper left", fontsize=8.5, frameon=False, bbox_to_anchor=(0.0, 0.86))
     else:

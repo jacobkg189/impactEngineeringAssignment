@@ -26,6 +26,11 @@ dashes at the site, same seed = same data, files read back identical).
 | `truth_seedN.csv` | same + true velocity | **only** the checking/plotting code, never tracker or decision |
 | `world_seedN.png` | map + distance-over-time plot | you |
 
+## Optional second threat (Part 2 Q3 only)
+`generate(seed, second_threat=dict(turn_deg=90))` adds a track **D**: A's own flight, coming from
+another side and/or starting later. The PDF scenario doesn't have it, `run.py` never uses it, and
+adding it leaves A, B, C and their reports byte-identical (it has its own random stream; tested).
+
 ## Assumptions made here (all in `common/config.py`)
 - A starts 3 km out horizontally at 100 m altitude, random bearing, flies a straight 3D line to (0,0,0).
 - B's closest approach is 700–900 m, reached between t = 40 and 90 s, at 120 m altitude.

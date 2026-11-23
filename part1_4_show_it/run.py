@@ -27,7 +27,7 @@ def headline(seed, engagements, track_ids):
     for e in engagements:
         if e.contact:
             parts.append(f"{e.track_id} met {e.contact_range_m:.0f} m from the site, closest pass "
-                         f"{e.pass_distance_m:.1f} m (reach {cfg.KILL_RADIUS_M:g} m)")
+                         f"{e.pass_distance_m:.1f} m (reach {cfg.TOUCH_RADIUS_M:g} m)")
         else:
             parts.append(f"interceptor missed {e.track_id} by {e.pass_distance_m:.0f} m")
     quiet = [t for t in track_ids if t not in {e.track_id for e in engagements}]
@@ -56,7 +56,7 @@ def run(seed):
     for e in engagements:
         verdict = "CONTACT" if e.contact else "MISS"
         print(f"                {e.track_id}: closest pass {e.pass_distance_m:.1f} m at t = {e.pass_time_s:.1f} s, "
-              f"{e.contact_range_m:.0f} m from the site -> {verdict} (reach {cfg.KILL_RADIUS_M:g} m)")
+              f"{e.contact_range_m:.0f} m from the site -> {verdict} (reach {cfg.TOUCH_RADIUS_M:g} m)")
         print(f"                  planned: t = {e.expected_time_s:.1f} s, {sum(e.aim ** 2) ** 0.5:.0f} m out; "
               f"aim point off by {e.aim_error_m:.1f} m")
     print(f"                wrote part1_4_show_it/output/{page.name} ({page.stat().st_size / 1e6:.1f} MB, "

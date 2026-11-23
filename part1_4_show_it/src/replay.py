@@ -46,8 +46,8 @@ class Engagement:
 
     @property
     def contact(self):
-        """They touched: the object came within the interceptor's reach (kill radius)."""
-        return bool(self.pass_distance_m <= cfg.KILL_RADIUS_M)
+        """They touched: the object came within the interceptor's reach (touch radius)."""
+        return bool(self.pass_distance_m <= cfg.TOUCH_RADIUS_M)
 
     @property
     def contact_range_m(self):

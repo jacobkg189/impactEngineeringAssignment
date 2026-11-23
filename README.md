@@ -43,7 +43,7 @@ seeds that no tuning step ever saw. Details and the picture are in `part1_5_chec
 | **A intercepted outside 500 m** | **50 / 50** | **50 / 50** |
 | **runs with a launch at B or C** | **0 / 50** | **0 / 50** |
 | **mean intercept distance from the site** | **687 m** (681–693) | **687 m** (681–693) |
-| true closest pass, interceptor to A (kill radius 15 m) | mean 4.9 m, max 11.8 m | mean 4.9 m, max 10.0 m |
+| true closest pass, interceptor to A (touch radius 15 m) | mean 4.9 m, max 11.8 m | mean 4.9 m, max 10.0 m |
 
 - 100/100 means a **≥ 96.3%** success rate with 95% confidence, *in this simulator*.
 - Every intercept is ~687 m **by design**: launch 5 s before the meeting would fall inside 600 m,

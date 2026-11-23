@@ -7,13 +7,15 @@ One self-contained HTML page (opens offline, in any browser):
               the moment the decision step confirmed the threat and the moment it ordered the
               launch (diamonds), its predicted path to the planned intercept point (red dots),
               the interceptor's path, and a moving sphere for every object at the slider's time.
-              The interceptor carries a see-through sphere of its reach (the 15 m kill radius).
+              The interceptor carries a see-through sphere of its reach (the 15 m touch radius).
               The two "touch" when the object is inside that sphere.
   time panel  distance to the site over time, in the same colours, with a time cursor and
               the same moments marked.
   controls    view buttons (whole scene / close-up on the meeting / top-down), a time slider,
               play from the start (it slows down near the meeting so you can watch it).
-              Click a legend entry to hide that layer.
+              The legend has one entry per LAYER (true path, radar reports, tracker
+              estimate, launch plan, interceptor), not per object: the colours say which
+              object. Click an entry to hide that layer for every object.
 
 Everything is a plain sphere, line or dot on purpose: no models of aircraft or munitions.
 Height is stretched in the whole-scene view so the 3 km x 120 m world isn't flat. The
@@ -77,11 +79,15 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
                      hoverinfo="skip"), 1)
     add(go.Scatter3d(x=[0], y=[0], z=[0], mode="markers+text", text=["site"], textposition="bottom center",
                      marker=dict(symbol="square", size=5, color=INK), textfont=dict(color=INK_MUTED, size=11),
-                     name="site: container + radar", hovertemplate="site (0, 0, 0)<extra></extra>"), 1)
+                     name="site: container + radar", showlegend=False, hovertemplate="site (0, 0, 0)<extra></extra>"), 1)
 
     # ------------------------------------------- per object: truth, reports, estimate ---
     hover = "%{fullData.name}<br>t %{customdata:.1f} s<br>x %{x:.0f}  y %{y:.0f}  z %{z:.0f} m<extra></extra>"
     hover2d = "%{fullData.name}<br>t %{x:.1f} s<br>%{y:.0f} m from the site<extra></extra>"
+    # One legend entry per layer, in neutral ink: the colour already says which object.
+    _legend_key(add, "true path", "truth", mode="lines", line=dict(color=INK_MUTED, width=5))
+    _legend_key(add, "radar reports", "reports", mode="markers", marker=dict(color=INK_MUTED, size=4, opacity=0.6))
+    _legend_key(add, "tracker estimate", "estimate", mode="lines", line=dict(color=INK_MUTED, width=3, dash="dash"))
     for tid in tids:
         c = color[tid]
         tr, rp, es = rows_for(truth, tid), rows_for(reports, tid), rows_for(estimates, tid)
@@ -89,18 +95,23 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
         rp = rp[rp["time_s"] <= stop[tid]]
         es = es[es["time_s"] <= stop[tid]]
 
-        _path(add, tr[before], f"{name[tid]} · true path", f"{tid}-truth", hover, hover2d,
+        _path(add, tr[before], f"{name[tid]} · true path", "truth", hover, hover2d,
               line=dict(color=c, width=5), line2d=dict(color=c, width=2.5))
         if (~before).any():
-            _path(add, tr[~before], f"{tid} · true path if it had not been met", f"{tid}-after", hover, hover2d,
+            _path(add, tr[~before], f"{tid} · true path if it had not been met", "truth", hover, hover2d,
                   line=dict(color=c, width=2, dash="dot"), line2d=dict(color=c, width=1.5, dash="dot"),
                   opacity=0.55)
-        _path(add, rp, f"{tid} · radar reports", f"{tid}-reports", hover, hover2d, mode="markers",
+        _path(add, rp, f"{tid} · radar reports", "reports", hover, hover2d, mode="markers",
               marker=dict(color=c, size=1.5, opacity=0.35), marker2d=dict(color=c, size=3, opacity=0.3))
-        _path(add, es, f"{tid} · tracker estimate", f"{tid}-estimate", hover, hover2d,
+        _path(add, es, f"{tid} · tracker estimate", "estimate", hover, hover2d,
               line=dict(color=c, width=3, dash="dash"), line2d=dict(color=c, width=1.5, dash="dash"))
 
     # --------------------------------------------- per launch: the decision moments ---
+    if pairs:
+        _legend_key(add, "launch plan: order ◆ → aim point", "plan", mode="lines+markers",
+                    line=dict(color=EVENT_RED, width=4, dash="dot"), marker=dict(symbol="diamond", size=5, color=EVENT_RED))
+        _legend_key(add, f"interceptor, reach {cfg.TOUCH_RADIUS_M:g} m", "interceptor", mode="lines+markers",
+                    line=dict(color=INTERCEPTOR, width=4), marker=dict(size=5, color=INTERCEPTOR))
     for L, e in pairs:
         tid, c = e.track_id, color[e.track_id]
         t_conf = first_confirmed_time(decisions, tid)
@@ -113,24 +124,24 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
             add(go.Scatter3d(x=[p[0]], y=[p[1]], z=[p[2]], mode="markers+text", text=[f"{label} {t_mark:.1f} s"],
                              textposition="top center", textfont=dict(color=INK, size=11),
                              marker=dict(symbol=symbol, size=7, color=mc),
-                             name=f"{tid} · {label} (estimated position)", legendgroup=f"{tid}-{symbol}",
+                             name=f"{tid} · {label} (estimated position)", legendgroup="plan", showlegend=False,
                              hovertemplate=(f"{label} at t {t_mark:.1f} s<br>estimated {np.linalg.norm(p):.0f} m "
                                             f"from the site<extra></extra>")), 1)
         add(go.Scatter3d(x=[p_order[0], e.aim[0]], y=[p_order[1], e.aim[1]], z=[p_order[2], e.aim[2]], mode="lines",
-                         line=dict(color=EVENT_RED, width=4, dash="dot"), legendgroup=f"{tid}-predicted",
+                         line=dict(color=EVENT_RED, width=4, dash="dot"), legendgroup="plan", showlegend=False,
                          name=f"{tid} · predicted path at the launch order", hoverinfo="skip"), 1)
         add(go.Scatter3d(x=[e.aim[0]], y=[e.aim[1]], z=[e.aim[2]], mode="markers",
                          marker=dict(symbol="x", size=5, color=EVENT_RED),
-                         name=f"{tid} · planned intercept point", legendgroup=f"{tid}-aim",
+                         name=f"{tid} · planned intercept point", legendgroup="plan", showlegend=False,
                          hovertemplate=(f"planned intercept point<br>t {e.expected_time_s:.1f} s, "
                                         f"{np.linalg.norm(e.aim):.0f} m from the site<extra></extra>")), 1)
         t_fly = np.linspace(e.leave_time_s, min(e.pass_time_s, cfg.SIM_DURATION_S), 60)
         flown = shown_interceptor_position(L, e, t_fly)
         add(go.Scatter3d(x=flown[:, 0], y=flown[:, 1], z=flown[:, 2], mode="lines",
-                         line=dict(color=INTERCEPTOR, width=4), name="interceptor path", legendgroup="icp-path",
-                         customdata=t_fly, hovertemplate=hover), 1)
+                         line=dict(color=INTERCEPTOR, width=4), name="interceptor path", legendgroup="interceptor",
+                         showlegend=False, customdata=t_fly, hovertemplate=hover), 1)
         add(go.Scatter(x=t_fly, y=np.linalg.norm(flown, axis=1), mode="lines", line=dict(color=INTERCEPTOR, width=2),
-                       name="interceptor path", legendgroup="icp-path", showlegend=False, hovertemplate=hover2d), 2)
+                       name="interceptor path", legendgroup="interceptor", showlegend=False, hovertemplate=hover2d), 2)
 
     # ------------------------------------------------------------ frame timeline ---
     times = np.arange(0, cfg.SIM_DURATION_S + 1e-9, FRAME_STEP_S)
@@ -151,17 +162,17 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
     sphere = _unit_sphere()
     i_obj = add(go.Scatter3d(mode="markers+text", textposition="middle right", textfont=dict(color=INK, size=13),
                              marker=dict(size=8, color=[color[t] for t in tids], line=dict(color="white", width=1)),
-                             name="objects now (true position)", hoverinfo="text"), 1)
+                             name="objects now (true position)", showlegend=False, hoverinfo="text"), 1)
     i_est = add(go.Scatter3d(mode="markers", marker=dict(size=11, symbol="circle-open", color=[color[t] for t in tids]),
-                             name="tracker estimate now", hoverinfo="text"), 1)
+                             name="tracker estimate now", legendgroup="estimate", showlegend=False, hoverinfo="text"), 1)
     i_icp = add(go.Scatter3d(mode="markers", marker=dict(size=7, color=INTERCEPTOR, line=dict(color="white", width=1)),
-                             name="interceptor now", hoverinfo="text"), 1)
+                             name="interceptor now", legendgroup="interceptor", showlegend=False, hoverinfo="text"), 1)
     i_reach = [add(go.Mesh3d(i=sphere["i"], j=sphere["j"], k=sphere["k"], color=INTERCEPTOR, opacity=0.14,
-                             flatshading=False, name=f"interceptor reach ({cfg.KILL_RADIUS_M:g} m)",
-                             legendgroup="reach", showlegend=(n == 0), hoverinfo="skip"), 1)
+                             flatshading=False, name=f"interceptor reach ({cfg.TOUCH_RADIUS_M:g} m)",
+                             legendgroup="interceptor", showlegend=False, hoverinfo="skip"), 1)
                for n in range(len(pairs))]
     i_touch = add(go.Scatter3d(mode="markers", marker=dict(size=18, symbol="circle-open", color=INK),
-                               name="contact", hoverinfo="text"), 1)
+                               name="contact", showlegend=False, hoverinfo="text"), 1)
     i_cursor = add(go.Scatter(mode="lines", line=dict(color=INK_MUTED, width=1), showlegend=False, hoverinfo="skip"), 2)
     i_now2d = add(go.Scatter(mode="markers", showlegend=False, hoverinfo="skip",
                              marker=dict(size=9, color=[color[t] for t in tids] + [INTERCEPTOR] * len(pairs),
@@ -185,7 +196,7 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
         for n, (L, e) in enumerate(pairs):
             ordered = t >= e.order_time_s
             centre = I[n] if ordered else np.zeros(3)
-            v = (sphere["v"] * cfg.KILL_RADIUS_M + centre).astype(np.float32)   # float32 halves the page size
+            v = (sphere["v"] * cfg.TOUCH_RADIUS_M + centre).astype(np.float32)   # float32 halves the page size
             data.append(go.Mesh3d(x=v[:, 0], y=v[:, 1], z=v[:, 2], opacity=0.14 if ordered else 0.0))
         data.append(go.Scatter3d(x=T[:, 0], y=T[:, 1], z=T[:, 2],
                                  hovertext=[f"contact {np.linalg.norm(p):.0f} m from the site" for p in T]))
@@ -195,7 +206,7 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
 
     # ------------------------------------------------------------- annotations ---
     events = _events_text(engagements, estimates, decisions, tids, name)
-    fig.add_annotation(xref="paper", yref="paper", x=1.0, y=1.0, xanchor="right", yanchor="top", align="left",
+    fig.add_annotation(xref="paper", yref="paper", x=1.0, y=0.65, xanchor="right", width=318, yanchor="top", align="left",
                        text=events, showarrow=False, font=dict(size=11.5, color=INK), bgcolor=SURFACE,
                        bordercolor=GRID, borderwidth=1, borderpad=8)
     # (explicit shapes: plotly's add_hline/add_vline refuse a figure that also holds 3D traces)
@@ -217,10 +228,11 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
     static_notes = list(fig.layout.annotations)
 
     def status_note(k):
-        return dict(xref="paper", yref="paper", x=0.0, y=1.0, xanchor="left", yanchor="top", align="left",
+        return dict(xref="paper", yref="paper", x=1.0, y=1.0, xanchor="right", width=318, yanchor="top", align="left",
                     showarrow=False, font=dict(size=12, color=INK), bgcolor="rgba(252,252,251,0.92)",
                     bordercolor=GRID, borderwidth=1, borderpad=8,
-                    text=_status_text(times[k], tids, name, color, decisions, pairs, I_at=[p[k] for p in icp]))
+                    text=_status_text(times[k], tids, name, color, decisions, pairs, I_at=[p[k] for p in icp],
+                                      P_at=[obj[tid][k] for tid in tids]))
 
     # ------------------------------------------------------------------- frames ---
     for i, d in zip(animated, frame_data(start_i)):        # the page opens on the start frame
@@ -248,17 +260,20 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
 
     play = dict(frame=dict(duration=FRAME_MS, redraw=True), transition=dict(duration=0), mode="immediate")
     fig.update_layout(
-        title=dict(text=title, x=0.0, xanchor="left", y=0.985, font=dict(size=16, color=INK)),
+        title=dict(text=_title_text(title), x=0.008, xanchor="left", yref="container", y=1.0, yanchor="top",
+                   pad=dict(t=50),
+                   font=dict(size=24, color=INK)),
         font=dict(family=FONT, color=INK), paper_bgcolor=SURFACE, plot_bgcolor=SURFACE,
-        margin=dict(l=10, r=10, t=56, b=70), uirevision="keep", hovermode="closest",
-        legend=dict(x=1.0, xanchor="right", y=0.60, yanchor="top", font=dict(size=11),
-                    bgcolor=SURFACE, itemsizing="constant", tracegroupgap=2),
-        scene=dict(domain=dict(x=[0.0, 0.78], y=[0.33, 0.97]),
+        margin=dict(l=10, r=10, t=116, b=70), uirevision="keep", hovermode="closest",
+        legend=dict(x=1.0, xanchor="right", y=0.39, yanchor="top", font=dict(size=12.5),
+                    title=dict(text="<b>Layers</b>  (click to hide)", font=dict(size=12, color=INK_MUTED)),
+                    bgcolor=SURFACE, bordercolor=GRID, borderwidth=1, itemsizing="constant", tracegroupgap=6),
+        scene=dict(domain=dict(x=[0.0, 0.74], y=[0.33, 0.97]),
                    xaxis=dict(_axis("x (m), east"), range=whole["xaxis_range"]),
                    yaxis=dict(_axis("y (m), north"), range=whole["yaxis_range"]),
                    zaxis=dict(_axis(whole["z_title"]), range=whole["zaxis_range"]),
                    aspectmode="manual", aspectratio=whole["aspectratio"], camera=whole["camera"]),
-        xaxis=dict(domain=[0.05, 0.78], range=[0, cfg.SIM_DURATION_S], title="time (s)", gridcolor=GRID,
+        xaxis=dict(domain=[0.05, 0.74], range=[0, cfg.SIM_DURATION_S], title="time (s)", gridcolor=GRID,
                    zeroline=False, color=INK_MUTED),
         yaxis=dict(domain=[0.0, 0.23], range=[0, 2 * half * 0.55], title="distance to site (m)", gridcolor=GRID,
                    zeroline=False, color=INK_MUTED),
@@ -273,7 +288,7 @@ def build_figure(truth, reports, estimates, decisions, launches, engagements, ti
                           dict(label="❚❚ Pause", method="animate",
                                args=[[None], dict(frame=dict(duration=0, redraw=False), mode="immediate")])]),
         ],
-        sliders=[dict(active=start_i, x=0.2, len=0.58, y=-0.02, yanchor="top", pad=dict(t=0, b=0),
+        sliders=[dict(active=start_i, x=0.2, len=0.54, y=-0.02, yanchor="top", pad=dict(t=0, b=0),
                       ticklen=0, tickwidth=0, font=dict(color="rgba(0,0,0,0)", size=1),
                       bgcolor=GRID, bordercolor=GRID, activebgcolor=INK_MUTED,
                       currentvalue=dict(prefix="t = ", font=dict(size=12, color=INK), xanchor="right"),
@@ -312,9 +327,29 @@ def _path(add, rows, label, group, hover, hover2d, mode="lines", line=None, line
         return
     p = positions(rows).astype(np.float32)
     add(go.Scatter3d(x=p[:, 0], y=p[:, 1], z=p[:, 2], mode=mode, line=line, marker=marker, opacity=opacity,
-                     name=label, legendgroup=group, customdata=rows["time_s"].astype(np.float32), hovertemplate=hover), 1)
+                     name=label, legendgroup=group, showlegend=False, customdata=rows["time_s"].astype(np.float32),
+                     hovertemplate=hover), 1)
     add(go.Scatter(x=rows["time_s"].astype(np.float32), y=np.linalg.norm(p, axis=1), mode=mode, line=line2d, marker=marker2d,
                    opacity=opacity, name=label, legendgroup=group, showlegend=False, hovertemplate=hover2d), 2)
+
+
+def _legend_key(add, label, group, **style):
+    """A legend-only entry (no data). Clicking it hides every trace in `group`."""
+    add(go.Scatter3d(x=[None], y=[None], z=[None], name=label, legendgroup=group, hoverinfo="skip", **style), 1)
+
+
+def _title_text(title):
+    """Headline big and bold, the rest of the line smaller underneath."""
+    head, _, rest = title.partition(" · ")
+    if not rest:
+        return f"<b>{head}</b>"
+    return f"<b>{head} · interceptor replay</b><br><span style='font-size:14px;color:{INK_MUTED}'>{rest}</span>"
+
+
+def _pos_line(mark, label, p):
+    """One row of the 'position now' table: fixed-width numbers so the columns line up."""
+    nums = "       —       —      —" if np.any(np.isnan(p)) else f"{p[0]:8.0f}{p[1]:8.0f}{p[2]:7.0f}"
+    return f"{mark} <span style='font-family:Menlo,Consolas,monospace;font-size:11px'>{label:<12}{nums}</span>"
 
 
 def _xyz(row):
@@ -364,7 +399,7 @@ def _relayout(view):
             "scene.zaxis.title.text": view["z_title"]}
 
 
-def _status_text(t, tids, name, color, decisions, pairs, I_at):
+def _status_text(t, tids, name, color, decisions, pairs, I_at, P_at):
     lines = [f"<b>t = {t:.1f} s</b>"]
     met = {e.track_id: e for _, e in pairs if e.contact and t >= e.pass_time_s - 1e-6}
     for tid in tids:
@@ -385,10 +420,17 @@ def _status_text(t, tids, name, color, decisions, pairs, I_at):
             what = f"flying, {np.linalg.norm(p):.0f} m out, meets {e.track_id} in {e.pass_time_s - t:.1f} s"
         elif e.contact:
             what = (f"touched {e.track_id}: closest pass {e.pass_distance_m:.1f} m "
-                    f"(reach {cfg.KILL_RADIUS_M:g} m)")
+                    f"(reach {cfg.TOUCH_RADIUS_M:g} m)")
         else:
-            what = f"missed {e.track_id} by {e.pass_distance_m:.0f} m (reach {cfg.KILL_RADIUS_M:g} m)"
+            what = f"missed {e.track_id} by {e.pass_distance_m:.0f} m (reach {cfg.TOUCH_RADIUS_M:g} m)"
         lines.append(f"■ interceptor: {what}")
+    lines.append("")
+    lines.append("<span style='font-family:Menlo,Consolas,monospace;font-size:11px'>"
+                 f"<b>{'position now':<14}</b>{'x (m)':>8}{'y (m)':>8}{'z (m)':>7}</span>")
+    for tid, p in zip(tids, P_at):
+        lines.append(_pos_line(f"<span style='color:{color[tid]}'>●</span>", name[tid], np.asarray(p, dtype=float)))
+    for p in I_at:
+        lines.append(_pos_line("■", "interceptor", np.asarray(p, dtype=float)))
     return "<br>".join(lines)
 
 
@@ -407,7 +449,7 @@ def _events_text(engagements, estimates, decisions, tids, name):
             lines.append(f"t {e.pass_time_s:5.1f} s  <b>contact {e.contact_range_m:.0f} m from the site</b>")
         else:
             lines.append(f"t {e.pass_time_s:5.1f} s  <b>missed</b> {tid}")
-        lines.append(f"closest pass {e.pass_distance_m:.1f} m · reach {cfg.KILL_RADIUS_M:g} m")
+        lines.append(f"closest pass {e.pass_distance_m:.1f} m · reach {cfg.TOUCH_RADIUS_M:g} m")
         lines.append(f"planned: t {e.expected_time_s:.1f} s, {np.linalg.norm(e.aim):.0f} m out, "
                      f"aim off by {e.aim_error_m:.1f} m")
     quiet = [t for t in tids if t not in {e.track_id for e in engagements}]

@@ -107,7 +107,7 @@ def summary_markdown(label, seeds_text, s):
         "|---|---|",
         f"| launches at A / contacts | {s['a_launched']} / {s['a_contact']} |",
         f"| true closest pass (interceptor to A) | mean {s['pass_mean']:.1f} m, 95th pct {s['pass_p95']:.1f} m, "
-        f"max {s['pass_max']:.1f} m (reach {cfg.KILL_RADIUS_M:g} m; claimed 1σ {s['sigma_mean']:.1f} m) |",
+        f"max {s['pass_max']:.1f} m (reach {cfg.TOUCH_RADIUS_M:g} m; claimed 1σ {s['sigma_mean']:.1f} m) |",
         f"| launch order | t = {s['order_min']:.1f}–{s['order_max']:.1f} s, A really "
         f"{s['order_range_min']:.0f}–{s['order_range_max']:.0f} m out |",
         f"| time to spare | contact came {s['spare_mean']:.1f} s (min {s['spare_min']:.1f} s) before A "

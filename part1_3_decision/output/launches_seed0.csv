@@ -1,2 +1,2 @@
-track_id,time_s,leave_time_s,intercept_time_s,aim_x_m,aim_y_m,aim_z_m,intercept_range_m,flight_s,aim_sigma_m,closest_approach_m,closest_sigma_m,speed_mps,fit_nis,threat_held_s,deadline_in_s,n_reports,time_since_report_s
-A,78.0,81.000,92.440,641.139,-243.961,23.663,686.393,14.440,8.810,7.102,23.197,25.145,2.504,71.600,4.876,696,0.000
+track_id,interceptor,time_s,leave_time_s,intercept_time_s,aim_x_m,aim_y_m,aim_z_m,intercept_range_m,flight_s,aim_sigma_m,closest_approach_m,closest_sigma_m,speed_mps,fit_nis,threat_held_s,deadline_in_s,n_reports,time_since_report_s
+A,1,78.0,81.000,92.440,641.139,-243.961,23.663,686.393,14.440,8.810,7.102,23.197,25.145,2.504,71.600,4.876,696,0.000

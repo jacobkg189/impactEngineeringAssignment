@@ -26,11 +26,10 @@ THE LOGIC, per track, every 0.1 s
 
 MORE THAN ONE THREAT (_assign, after every track has been judged this tick)
   Interceptors are limited: one is ready at the start, the next INTERCEPTOR_REARM_S after
-  each launch. The confirmed threats are queued, most urgent first. Two flying close enough
-  together share one interceptor aimed at their midpoint. Otherwise the most urgent one goes
-  first, early enough that the next interceptor is ready in time for the next threat.
-  A threat that is due while no interceptor is ready is "queued". With one threat, steps 1-6
-  above are exactly what happens.
+  each launch. The confirmed threats are queued, most urgent first, and each one gets its own
+  interceptor. The most urgent one goes first, early enough that the next interceptor is
+  ready in time for the next threat. A threat that is due while no interceptor is ready is
+  "queued". With one threat, steps 1-6 above are exactly what happens.
 
   Waiting is deliberate: aim error ~ velocity error x flight time, so a later
   launch means a shorter flight and a better aim, and gives the target less
@@ -49,8 +48,7 @@ import numpy as np
 from common import config as cfg
 from common.files import DECISION_DTYPE, ESTIMATE_DTYPE, LAUNCH_DTYPE
 from part1_2_tracker.src.tracker import Tracker, ticks
-from .geometry import (closest_approach, prediction_sigma, solve_intercept, solve_shared_intercept,
-                       time_until_latest_launch)
+from .geometry import closest_approach, prediction_sigma, solve_intercept, time_until_latest_launch
 
 NAN = float("nan")
 
@@ -137,9 +135,8 @@ class Decider:
                 status = "too_late"
             else:
                 status = "confirmed"            # _assign decides: launch now, queued, or keep holding
-                candidate = dict(tid=tid, pos=pos, vel=vel, pos_err=float(est["pos_err_m"]),
-                                 vel_err=float(est["vel_err_mps"]), flight=flight, aim=aim,
-                                 aim_sigma=aim_sigma, range=int_range, deadline=deadline_in,
+                candidate = dict(tid=tid, flight=flight, aim=aim, aim_sigma=aim_sigma, range=int_range,
+                                 deadline=deadline_in,
                                  why=(d_min, d_sigma, speed, fit, held, deadline_in,
                                       int(est["n_reports"]), float(est["time_since_report_s"])))
 
@@ -148,72 +145,41 @@ class Decider:
 
     # ------------------------------------------------------------------------
     def _assign(self, t, confirmed):
-        """Which confirmed threats get an interceptor now? Returns {track_id: "launch" | "queued"}
+        """Which confirmed threat gets an interceptor now? Returns {track_id: "launch" | "queued"}
         for the tracks whose status changes. Everything else stays "confirmed" (holding).
 
-        1. Most urgent first: least time left before its meeting would fall inside 500 m + margin.
-           For threats at the same speed, that is simply the closest one.
-        2. Two threats flying close enough together share ONE interceptor aimed at their
-           midpoint (_shots, SHARED_SHOT_MARGIN_M).
-        3. Every other shot needs its own interceptor. Shot j gets the one that is ready
-           j x INTERCEPTOR_REARM_S after this launch, so the first shot goes early enough for every
-           later shot to still be on time (MAKE_TIME_FOR_NEXT). With a single threat this is the
-           ordinary rule: launch when LAUNCH_LEAD_S is left.
+        The queue is ordered most urgent first: least time left before its meeting would fall
+        inside 500 m + margin. For threats at the same speed, that is simply the closest one.
+        Each threat needs its own interceptor. The threat in place j of the queue gets the one
+        that is ready j x INTERCEPTOR_REARM_S after this launch, so the first launch goes early
+        enough for every later threat to still be on time (MAKE_TIME_FOR_NEXT). With a single
+        threat this is the ordinary rule: launch when LAUNCH_LEAD_S is left.
         """
         if not confirmed:
             return {}
         lead = cfg.LAUNCH_LEAD_S
-        shots = self._shots(sorted(confirmed, key=lambda c: (c["deadline"], c["range"])))
-        due = lambda shot: min(c["deadline"] for c in shot["members"])
-        usable = min(len(shots), self.interceptors_left)
-        if usable == 0:                                     # none left: say so for every due threat
-            return {c["tid"]: "queued" for shot in shots if due(shot) <= lead for c in shot["members"]}
+        queue = sorted(confirmed, key=lambda c: (c["deadline"], c["range"]))
+        served = queue[:self.interceptors_left]             # the ones an interceptor still exists for
+        if not served:                                      # none left: say so for every due threat
+            return {c["tid"]: "queued" for c in queue if c["deadline"] <= lead}
         rearm = cfg.INTERCEPTOR_REARM_S if cfg.MAKE_TIME_FOR_NEXT else 0.0
-        if min(due(shots[j]) - j * rearm for j in range(usable)) > lead:
-            return {}                                       # every shot can still wait
+        if min(c["deadline"] - j * rearm for j, c in enumerate(served)) > lead:
+            return {}                                       # everyone can still wait
         if t < self.next_ready_s - 1e-9:                    # due, but the interceptor isn't ready yet
-            return {c["tid"]: "queued" for j, shot in enumerate(shots)
-                    if j == 0 or due(shot) <= lead for c in shot["members"]}
-        self._fire(t, shots[0])
-        return {c["tid"]: "launch" for c in shots[0]["members"]}
+            return {c["tid"]: "queued" for j, c in enumerate(queue) if j == 0 or c["deadline"] <= lead}
+        self._launch(t, queue[0])
+        return {queue[0]["tid"]: "launch"}
 
-    def _shots(self, queue):
-        """Group the queue (most urgent first) into shots. Each shot is the most urgent threat left,
-        plus a partner if one interceptor aimed at their midpoint would have BOTH well inside its
-        reach: half their separation at the meeting <= KILL_RADIUS_M - SHARED_SHOT_MARGIN_M."""
-        shots, rest = [], list(queue)
-        while rest:
-            first = rest.pop(0)
-            best = None
-            for other in rest:
-                shared = solve_shared_intercept(first["pos"], first["vel"], other["pos"], other["vel"],
-                                                cfg.INTERCEPTOR_DELAY_S, cfg.INTERCEPTOR_SPEED_MPS)
-                if shared is not None and shared[2] / 2 <= cfg.KILL_RADIUS_M - cfg.SHARED_SHOT_MARGIN_M \
-                        and (best is None or shared[2] < best[1][2]):
-                    best = (other, shared)
-            if best is None:
-                shots.append(dict(members=[first], flight=first["flight"], aim=first["aim"],
-                                  aim_sigma=first["aim_sigma"]))
-            else:
-                other, (flight, aim, _) = best
-                rest.remove(other)
-                sigma = max(prediction_sigma(c["pos_err"], c["vel_err"], flight) for c in (first, other))
-                shots.append(dict(members=[first, other], flight=flight, aim=aim, aim_sigma=sigma))
-        return shots
-
-    def _fire(self, t, shot):
-        """Launch one interceptor at a shot: one LAUNCH row per threat it is aimed at."""
+    def _launch(self, t, c):
+        """Order one interceptor at one threat, and record the numbers behind it."""
         self.fired += 1
         self.interceptors_left -= 1
         self.next_ready_s = t + cfg.INTERCEPTOR_REARM_S
-        names = [c["tid"] for c in shot["members"]]
-        for c in shot["members"]:
-            partner = next((n for n in names if n != c["tid"]), "")
-            self.launched.add(c["tid"])
-            self.launches.append((
-                c["tid"], self.fired, partner, t, t + cfg.INTERCEPTOR_DELAY_S, t + shot["flight"], *shot["aim"],
-                float(np.linalg.norm(shot["aim"])), shot["flight"], shot["aim_sigma"], *c["why"],
-            ))
+        self.launched.add(c["tid"])
+        self.launches.append((
+            c["tid"], self.fired, t, t + cfg.INTERCEPTOR_DELAY_S, t + c["flight"], *c["aim"],
+            c["range"], c["flight"], c["aim_sigma"], *c["why"],
+        ))
 
     def launch_table(self):
         return np.array(self.launches, dtype=LAUNCH_DTYPE)

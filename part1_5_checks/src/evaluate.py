@@ -3,7 +3,7 @@ evaluate.py — JUDGE side. Allowed to read truth.
 
 One run in, one scored row out (RUN_RESULT_DTYPE in common/files.py):
   - every launch order is flown against the truth (Part 1.4's replay.py): did the interceptor
-    really come within KILL_RADIUS_M of its target, and how far from the site?
+    really come within TOUCH_RADIUS_M of its target, and how far from the site?
   - was it launched at A (right) or at B / C (wrong, and a failure)?
   - MARGINS: how close did B and the bird come to being launched at? A clean 0/50 means
     little if every run only just scraped past a threshold.

@@ -23,7 +23,7 @@ rate at **≤ 3.7%**, in this simulated world. Full tables: [`output/summary.md`
 Every seed runs the whole chain in memory: generator → tracker + decision in one real-time loop
 (`decide_live`, which sees **only the radar reports**) → judge. The truth enters only at the judge.
 - **"A intercepted"** = the launch order, flown against A's **true** path by Part 1.4's
-  `replay.py`, really brings the interceptor within the 15 m kill radius (`KILL_RADIUS_M`, an
+  `replay.py`, really brings the interceptor within the 15 m touch radius (`TOUCH_RADIUS_M`, an
   assumption). The plan alone doesn't count. **"Outside 500 m"** = that meeting is more than
   500 m from the site.
 - **"Launch at B or C"** = any launch order at all on B or C, whether or not it would have hit.
@@ -89,7 +89,7 @@ the 687 m moves with it. Part 2 Q1 is about that trade.
   and the bird's wandering change. The runs test robustness to noise, not to different threat
   behaviour (a slower or faster A, one that weaves, one that starts closer).
 - **Not exercised here:** a radar outage (Part 2 Q2), two threats at once (Q3), a manoeuvring
-  threat, a faster bird, a second shot after a miss.
+  threat, a faster bird, a second interceptor after a miss.
 - The intervals describe **this simulator**. They say nothing about a real radar until the noise
   and drop models are measured (Part 2 Q5).
 

@@ -78,7 +78,7 @@ def test_aim_point_50_m_off_is_no_contact(seed0):
     off["aim_y_m"] += 50.0
     r = scored(0, truth, decisions, off)
     assert r["a_launches"] == 1 and r["a_contact"] == 0 and r["a_outside_500"] == 0
-    assert r["a_pass_m"] > cfg.KILL_RADIUS_M
+    assert r["a_pass_m"] > cfg.TOUCH_RADIUS_M
 
 
 def test_no_launch_at_all_is_a_failure(seed0):

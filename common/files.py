@@ -62,13 +62,10 @@ DECISION_DTYPE = np.dtype([
     ("threat_held_s", "f8"),        # how long the threat test has held without a break
 ])
 
-# One row per threat a launch order is aimed at. Usually one interceptor = one row. A shared shot
-# (one interceptor aimed between two threats flying close together) gives two rows with the same
-# interceptor number, each naming the other in shared_with.
+# One row per launch order: one interceptor at one track.
 LAUNCH_DTYPE = np.dtype([
     ("track_id", "U8"),
-    ("interceptor", "i8"),          # 1, 2, ... in launch order
-    ("shared_with", "U8"),          # the other threat this interceptor is aimed at, "" if none
+    ("interceptor", "i8"),          # which interceptor: 1, 2, ... in launch order
     ("time_s", "f8"),               # when the order was given
     ("leave_time_s", "f8"),         # order + 3 s
     ("intercept_time_s", "f8"),     # when we expect to meet the target
@@ -95,7 +92,7 @@ RUN_RESULT_DTYPE = np.dtype([
     ("n_launches", "i8"),
     ("wrong_launches", "i8"),            # launches at anything but A (B or C) — each one is a failure
     ("a_launches", "i8"),
-    ("a_contact", "i8"),                 # 1 = the interceptor really came within the kill radius of A
+    ("a_contact", "i8"),                 # 1 = the interceptor really came within the touch radius of A
     ("a_outside_500", "i8"),             # 1 = contact AND it happened outside 500 m: the PDF's success
     ("a_order_time_s", "f8"),
     ("a_range_at_order_m", "f8"),        # where A really was when we ordered the launch

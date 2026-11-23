@@ -77,7 +77,7 @@ def test_accurate_enough_to_aim_at_straight_flyers():
             vel.extend(v)
             aim.extend(a)
         assert rms(vel) < 0.5,  f"{tid} velocity RMS {rms(vel):.2f} m/s"
-        assert rms(aim) < cfg.KILL_RADIUS_M, f"{tid} 15 s prediction RMS {rms(aim):.1f} m"
+        assert rms(aim) < cfg.TOUCH_RADIUS_M, f"{tid} 15 s prediction RMS {rms(aim):.1f} m"
 
 
 def test_claimed_error_matches_real_error_on_straight_flyers():
